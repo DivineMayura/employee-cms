@@ -1,0 +1,4 @@
+node_modules
+.DS_Store
+schema.sql
+# don't know if I need schema.sql yet...
