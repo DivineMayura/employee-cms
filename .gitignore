@@ -1,4 +1,4 @@
 node_modules
 .DS_Store
-schema.sql
-# don't know if I need schema.sql yet...
+seed.sql
+# seed.sql is primarily utilized for testing purposes.
