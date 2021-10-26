@@ -72,11 +72,7 @@ function isolator(data) {
             break;
         case 'Add Role':
             // console.log("add that role");
-            inquirer
-                .prompt(addRoles)
-                .then(data => roleIntensification(data))
-                .catch(err => console.log(err))
-
+            rolesLoop()
             break;
         case 'View All Departments':
             // console.log("view them departments");
@@ -84,6 +80,8 @@ function isolator(data) {
             break;
         case 'Add Department':
             // console.log("add that department");
+
+
             inquirer
                 .prompt(addDepartments)
                 .then(data => departmentAggrandizement(data))
@@ -146,48 +144,76 @@ function departmentAggrandizement(data) {
     })
 };
 
-const addRoles = [
-    {
-        message: "What is the name of the role?\n",
-        name: "arName"
-    },
-    {
-        message: "What is the salary of the role?\n",
-        name: "arSalary"
-    },
-    {
-        type: "list",
-        message: "Which department does the role belong to?\n",
-        choices: [departmentList],
-        name: "arBelong"
-    },
 
-]
 
-async function rolesLoop() {
-    db.query(`select department_name from departments`, (err, result) => {
+///////////////////////////
+function rolesLoop() {
+    // resets departmentlist
+    var departmentList = [];
+
+    db.query(`select * from departments`, (err, result) => {
         if (err) { console.log(err, "Error retrieving data.") }
 
-        let departmentList;
-        for (i = 0; i > result.length; i++) {
+
+        console.log("Roles loop here.");
+        console.log("Let me log those for you1", result, result.length)
+
+        for (i = 0; i < result.length; i++) {
             console.log("Let me log those for you", result[i].department_name)
             departmentList.push(result[i].department_name)
         }
-        
+        console.log(departmentList)
+
+
+        const addRoles = [
+            {
+                message: "What is the name of the role?\n",
+                name: "arName"
+            },
+            {
+                message: "What is the salary of the role?\n",
+                name: "arSalary"
+            },
+            {
+                type: "list",
+                message: "Which department does the role belong to?\n",
+                choices: departmentList,
+                name: "arBelong"
+            },
+
+        ]
+
+
+        inquirer
+            .prompt(addRoles)
+            .then(data => roleIntensification(data, result))
+            .catch(err => console.log(err))
+
     })
 }
 
-function roleIntensification(data) {
+
+
+async function roleIntensification(data, result) {
     console.log(data, "this is le role data")
-    await rolesLoop();
-    let perameters = [data.arName, data.arSalary, data.arBelong]
-    db.query(`insert into roles (title, salary, department_id) values (?)`, perameters, (err, result) => {
+    var currentID;
+
+    for (z = 0; z < result.length; z++) {
+        if (data.arBelong == result[z].department_name) {
+            currentID = result[z].id;
+            console.log(currentID)
+        }
+    }
+
+    let perameters = [data.arName, parseInt(data.arSalary), currentID]
+    console.log(perameters, "this is the perameters")
+    db.query(`insert into roles (title, salary, department_id) values (?,?,?)`, perameters, (err, result) => {
         if (err) { console.log(err, "Error creating role.") }
         console.log("Created role!")
         bootSequence()
     })
 
-
+    
 }
 
 function fabricateEmployee(data) {
