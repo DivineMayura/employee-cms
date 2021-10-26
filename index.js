@@ -3,6 +3,8 @@ const inquirer = require("inquirer");
 const util = require("util");
 const consoleTable = require("console.table");
 const { Console } = require('console');
+const { resolve } = require('path');
+const { exit } = require('process')
 const db = mysql.createConnection(
     {
         host: 'localhost',
@@ -17,7 +19,8 @@ const db = mysql.createConnection(
     ────────────────────────────────────────\n
     `)
 );
-const dbquery = util.promisify(db.query).bind(db);
+
+
 
 
 
@@ -83,8 +86,7 @@ function isolator(data) {
                 .catch(err => console.log(err))
             break;
         case 'Quit':
-            console.log("Let ME OUT of HERE");
-            console.log("NOTE TO SELF, find out how to exit aplication.");
+                exit();
             break;
         default:
             console.log("Oh, wow, okay, that's a critical error. Don't know how you got this.")
@@ -93,7 +95,7 @@ function isolator(data) {
 };
 
 function observeEmployees() {
-    db.query(`select * from employee`, (err, result) => {
+    db.query(`select employee.id, first_name, last_name, title, salary, manager_id from employee inner join roles on employee.role_id = roles.id`, (err, result) => {
         if (err) { console.log(err, "Oh, retrieving Employees list errored.") };
         console.table(result);
         bootSequence();
@@ -142,7 +144,7 @@ function rolesLoop() {
             // console.log("Let me log those for you", result[i].department_name)
             departmentList.push(result[i].department_name)
         }
-        console.log(departmentList)
+        // console.log(departmentList)
         const addRoles = [
             {
                 message: "What is the name of the role?\n",
@@ -201,7 +203,7 @@ function retrieveRoles() {
             rolesList.push(result[v].title)
         }
         rolesListDetailed.push(result)
-        console.log(rolesList)
+        // console.log(rolesList)
         // resolve("resolved")
     })
     // });
@@ -270,7 +272,7 @@ function employeesLoop() {
         // for loop for the roles.
         // console.log(data)
         // 
-        // This shit was a mess, I really should have just made it async it would have been 200x easier.
+        // This was a mess, I really should have just made it async it would have been 200x easier.
         // The amount of trial and error was pretty extreme because of several unexpected problems..
         // 
         // console.log("role Belong:", data.aeRoleBelong)
@@ -294,9 +296,114 @@ function employeesLoop() {
 }
 
 
+// Globalized for stuff below.
+var grabThemRoles = [];
+var grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed = [];
+// Global variables to everything below
+var grabEmployees = [];
+var grabEmployeesDetailed = [];
+
+function grabThoseEmployees() {
+    // resets the variables so I don't keep adding to them endlessly.
+    var grabEmployees = [];
+    var grabEmployeesDetailed = [];
+
+    db.query(`select * from employee`, (err, result) => {
+        if (err) { console.log(err, "Error retrieving data.") }
+        for (u = 0; u < result.length; u++) {
+            // 800IQ play of just using a string literal here.
+            grabEmployees.push(`${result[u].first_name} ${result[u].last_name}`)
+        }
+        grabEmployeesDetailed.push(result)
+        console.log("4", grabThemRoles, grabEmployees)
+
+        // I hate that I had to make this nested due to time constraints
+        // note to self, fix this later.
+
+        grabThoseRoles()
+        function grabThoseRoles() {
+            // resets the variables so I don't keep adding them; add infinitum.
+            var grabThemRoles = [];
+            var grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed = [];
+
+
+            db.query(`select * from roles`, (err, result) => {
+                if (err) { console.log(err, "Error retrieving data.") }
+                for (v = 0; v < result.length; v++) {
+
+                    grabThemRoles.push(result[v].title)
+                    console.log(grabThemRoles)
+                }
+                grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed.push(result)
+
+                console.log("5", grabThemRoles, grabEmployees)
+
+                const modifyPrompt = [
+                    {
+                        type: "list",
+                        message: "Select the Employee you wish to change the role of.\n",
+                        choices: grabEmployees,
+                        name: "chosenOne"
+                    },
+                    {
+                        type: "list",
+                        message: "Select the role.\n",
+                        choices: grabThemRoles,
+                        name: "chosenRole"
+                    }
+                ]
+
+                // like, actually eww, grossly nested
+
+                inquirer
+                    .prompt(modifyPrompt)
+                    .then(data => roleReplacer(data))
+                    .catch(err => console.log(err))
+
+                var newRoleID;
+                var employeeID;
+
+                function roleReplacer(data) {
+                    // console.log(data)
+
+                    for (s = 0; s < grabEmployeesDetailed[0].length; s++) {
+                        // console.log(`${grabEmployeesDetailed[0][s].first_name} ${grabEmployeesDetailed[0][s].last_name}`, data.chosenOne)
+                        if (data.chosenOne == `${grabEmployeesDetailed[0][s].first_name} ${grabEmployeesDetailed[0][s].last_name}`) {
+                            employeeID = grabEmployeesDetailed[0][s].id;
+                        }
+                    }
+
+                    for (t = 0; t < grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed[0].length; t++) {
+                        // console.log(grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed[0][t].title + data.chosenRole)
+                        if (data.chosenRole == grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed[0][t].title) {
+                            newRoleID = grabThemRolesButInsteadTheseAreVerySlightlyMoreDetailed[0][t].id;
+                        }
+                    }
 
 
 
+                    var status = [newRoleID, employeeID]
+
+                    db.query(`update employee set role_id = (?) where id = (?)`, status, (err, result) => {
+                        if (err) { console.log(err, "Error retrieving data.") }
+                        console.log("DID IT OKAY")
+                        bootSequence()
+                        // fix disgusting neted functions later.
+                    })
+                }
+            })
+        }
+    })
+}
+// Like, omg, way too nested.
+// Technically it does work though...
+
+function modifyExistingHuman() {
+    // I can fix this later, rn it should all be separated.
+    console.log("1", grabThemRoles, grabEmployees)
+    grabThoseEmployees();
+
+}
 
 
 

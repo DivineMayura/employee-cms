@@ -1,4 +1,2 @@
 node_modules
 .DS_Store
-seed.sql
-# seed.sql is primarily utilized for testing purposes.
