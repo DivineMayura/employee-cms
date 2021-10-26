@@ -174,7 +174,7 @@ function roleIntensification(data, result) {
     for (z = 0; z < result.length; z++) {
         if (data.arBelong == result[z].department_name) {
             currentID = result[z].id;
-            console.log(currentID)
+            // console.log(currentID)
         }
     }
     let perameters = [data.arName, parseInt(data.arSalary), currentID]
