@@ -25,6 +25,8 @@ create table employee (
     role_id int,
     manager_id int,
     foreign key (role_id)
-    references roles(id)
+    references roles(id),
+    foreign key (manager_id)
+    references employee(id)
 );
 

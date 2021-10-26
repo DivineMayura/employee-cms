@@ -57,10 +57,7 @@ function isolator(data) {
             break;
         case 'Add Employee':
             // console.log("add that employee");
-            inquirer
-                .prompt(addEmployee)
-                .then(data => fabricateEmployee(data))
-                .catch(err => console.log(err))
+            employeesLoop()
             break;
         case 'Update Employee Role':
             // console.log("update that role");
@@ -80,8 +77,6 @@ function isolator(data) {
             break;
         case 'Add Department':
             // console.log("add that department");
-
-
             inquirer
                 .prompt(addDepartments)
                 .then(data => departmentAggrandizement(data))
@@ -98,34 +93,25 @@ function isolator(data) {
 };
 
 function observeEmployees() {
-    db.query(`select * from employe`, (err, result) => {
-
+    db.query(`select * from employee`, (err, result) => {
         if (err) { console.log(err, "Oh, retrieving Employees list errored.") };
-
         console.table(result);
-
         bootSequence();
     })
 };
 
 function percieveRoles() {
     db.query(`select * from roles`, (err, result) => {
-
         if (err) { console.log(err, "Oh, retrieving Roles list errored.") };
-
         console.table(result);
-
         bootSequence();
     })
 };
 
 function detectDepartments() {
     db.query(`select * from departments`, (err, result) => {
-
         if (err) { console.log(err, "Oh, retrieving Employees list errored.") };
-
         console.table(result);
-
         bootSequence();
     })
 };
@@ -144,27 +130,19 @@ function departmentAggrandizement(data) {
     })
 };
 
-
-
 ///////////////////////////
 function rolesLoop() {
     // resets departmentlist
     var departmentList = [];
-
     db.query(`select * from departments`, (err, result) => {
         if (err) { console.log(err, "Error retrieving data.") }
-
-
-        console.log("Roles loop here.");
-        console.log("Let me log those for you1", result, result.length)
-
+        // console.log("Roles loop here.");
+        // console.log("Let me log those for you1", result, result.length)
         for (i = 0; i < result.length; i++) {
-            console.log("Let me log those for you", result[i].department_name)
+            // console.log("Let me log those for you", result[i].department_name)
             departmentList.push(result[i].department_name)
         }
         console.log(departmentList)
-
-
         const addRoles = [
             {
                 message: "What is the name of the role?\n",
@@ -180,22 +158,15 @@ function rolesLoop() {
                 choices: departmentList,
                 name: "arBelong"
             },
-
         ]
-
-
         inquirer
             .prompt(addRoles)
             .then(data => roleIntensification(data, result))
             .catch(err => console.log(err))
-
     })
 }
-
-
-
-async function roleIntensification(data, result) {
-    console.log(data, "this is le role data")
+function roleIntensification(data, result) {
+    // console.log(data, "this is le role data")
     var currentID;
 
     for (z = 0; z < result.length; z++) {
@@ -204,22 +175,128 @@ async function roleIntensification(data, result) {
             console.log(currentID)
         }
     }
-
     let perameters = [data.arName, parseInt(data.arSalary), currentID]
-    console.log(perameters, "this is the perameters")
+    // console.log(perameters, "this is the perameters")
     db.query(`insert into roles (title, salary, department_id) values (?,?,?)`, perameters, (err, result) => {
         if (err) { console.log(err, "Error creating role.") }
         console.log("Created role!")
         bootSequence()
     })
+}
+// ////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////
+var rolesList = [];
+var rolesListDetailed = [];
+function retrieveRoles() {
+    // Wipes the roles list clean, so it doesn't continually add roles
+    rolesList = [];
+    rolesListDetailed = [];
+    // return new Promise(resolve => {
+    db.query(`select * from roles`, (err, result) => {
+        if (err) { console.log(err, "Error retrieving Roles list.") }
 
-    
+        for (v = 0; v < result.length; v++) {
+            // console.log("Let me log those roles for you", result[i].title)
+            rolesList.push(result[v].title)
+        }
+        rolesListDetailed.push(result)
+        console.log(rolesList)
+        // resolve("resolved")
+    })
+    // });
+}
+function employeesLoop() {
+    var employeeList = [];
+    var employeeListDetailed = [];
+    retrieveRoles();
+    db.query(`select * from employee`, (err, result) => {
+        if (err) { console.log(err, "Error retrieving data.") }
+        // console.log("Employees loop here.");
+        // console.log("Let me log those for you1", result, result.length)
+        for (w = 0; w < result.length; w++) {
+            // console.log("Let me log those for you", result[i].first_name)
+            employeeList.push(result[w].first_name)
+            // employeeListDetailed.push(result[i].first_name, result[i].id)
+        }
+        employeeListDetailed.push(result)
+        employeeList.push("No Manager")
+        // employeeListDetailed.push("No Manager")
+        // console.log(employeeList)
+        // console.log(rolesList, "checking roles List inside employees Loop")
+        const addEmployees = [
+            {
+                message: "What is the employee's first name?\n",
+                name: "aeFirstname"
+            },
+            {
+                message: "What is the employee's last name?\n",
+                name: "aeLastName"
+            },
+            {
+                type: "list",
+                message: "What is the employee's role?\n",
+                choices: rolesList,
+                name: "aeRoleBelong"
+            },
+            {
+                type: "list",
+                message: "What is the employee's manager?\n",
+                choices: employeeList,
+                name: "aeManager"
+            }
+        ]
+        inquirer
+            .prompt(addEmployees)
+            .then(data => fabricateEmployee(data))
+            .catch(err => console.log(err))
+    });
+    function fabricateEmployee(data) {
+        // console.log(data, "this is the new human data")
+        var roleID;
+        var managerID;
+        // for loop for the employees
+        // console.log(data.aeManager);
+        // console.log(employeeListDetailed);
+        for (x = 0; x < employeeListDetailed[0].length; x++) {
+            // console.log("this is the one in the loop", employeeListDetailed[0][x].id, employeeListDetailed[0][x].first_name, data.aeManager);
+            if (data.aeManager !== "No Manager") {
+                if (data.aeManager == employeeListDetailed[0][x].first_name) {
+                    managerID = employeeListDetailed[0][x].id;
+                }
+            } else { managerID = null }
+        }
+        // console.log("manager ID:", managerID)
+        // for loop for the roles.
+        // console.log(data)
+        // 
+        // This shit was a mess, I really should have just made it async it would have been 200x easier.
+        // The amount of trial and error was pretty extreme because of several unexpected problems..
+        // 
+        // console.log("role Belong:", data.aeRoleBelong)
+        // console.log("detailed role list:", rolesListDetailed[0][y].title)
+        for (y = 0; y < rolesListDetailed[0].length; y++) {
+            // console.log("detailed role listsss:", rolesListDetailed[0][y].title)
+            if (data.aeRoleBelong == rolesListDetailed[0][y].title) {
+                roleID = rolesListDetailed[0][y].id;
+            }
+            //  console.log("didn't work", rolesListDetailed.length)
+        }
+        // console.log("role ID:", roleID)
+        let perammies = [data.aeFirstname, data.aeLastName, roleID, managerID]
+        // console.log(perammies, "this is the perameters")
+        db.query(`insert into employee (first_name, last_name, role_id, manager_id) values (?,?,?,?)`, perammies, (err, result) => {
+            if (err) { console.log(err, "Error adding Human.") }
+            console.log("Added Human!")
+            bootSequence()
+        })
+    }
 }
 
-function fabricateEmployee(data) {
-    console.log(data, "this is the new human data")
 
-}
+
+
+
 
 
 
