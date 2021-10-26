@@ -1,7 +1,8 @@
 const mysql = require('mysql2');
 const inquirer = require("inquirer");
 const util = require("util");
-
+const consoleTable = require("console.table");
+const { Console } = require('console');
 const db = mysql.createConnection(
     {
         host: 'localhost',
@@ -51,32 +52,42 @@ function isolator(data) {
     // And it looks far nicer than like 300 if else statements lol.
     switch (data.navAnswer) {
         case 'View All Employees':
-            console.log("view them employees");
+            // console.log("view them employees");
             observeEmployees()
             break;
         case 'Add Employee':
-            console.log("add that employee");
-            fabricateEmployee()
+            // console.log("add that employee");
+            inquirer
+                .prompt(addEmployee)
+                .then(data => fabricateEmployee(data))
+                .catch(err => console.log(err))
             break;
         case 'Update Employee Role':
-            console.log("update that role");
+            // console.log("update that role");
             modifyExistingHuman()
             break;
         case 'View All Roles':
-            console.log("view them roles");
+            // console.log("view them roles");
             percieveRoles()
             break;
         case 'Add Role':
-            console.log("add that role");
-            roleIntensification()
+            // console.log("add that role");
+            inquirer
+                .prompt(addRoles)
+                .then(data => roleIntensification(data))
+                .catch(err => console.log(err))
+
             break;
         case 'View All Departments':
-            console.log("view them departments");
+            // console.log("view them departments");
             detectDepartments()
             break;
         case 'Add Department':
-            console.log("add that department");
-            departmentAggrandizement()
+            // console.log("add that department");
+            inquirer
+                .prompt(addDepartments)
+                .then(data => departmentAggrandizement(data))
+                .catch(err => console.log(err))
             break;
         case 'Quit':
             console.log("Let ME OUT of HERE");
@@ -89,7 +100,7 @@ function isolator(data) {
 };
 
 function observeEmployees() {
-    db.query(`select * from employee`, (err, result) => {
+    db.query(`select * from employe`, (err, result) => {
 
         if (err) { console.log(err, "Oh, retrieving Employees list errored.") };
 
@@ -102,7 +113,7 @@ function observeEmployees() {
 function percieveRoles() {
     db.query(`select * from roles`, (err, result) => {
 
-        if (err) { console.log(err, "Oh, retrieving Employees list errored.") };
+        if (err) { console.log(err, "Oh, retrieving Roles list errored.") };
 
         console.table(result);
 
@@ -120,14 +131,71 @@ function detectDepartments() {
         bootSequence();
     })
 };
-// async function detectDepartments() {
-//     db.query
-// }
+
+const addDepartments = [
+    {
+        message: "What is the name of the department?\n",
+        name: "adn"
+    }
+]
+function departmentAggrandizement(data) {
+    // console.log(data, "this is the data")
+    db.query(`insert into departments (department_name) values (?)`, data.adn, (err, result) => {
+        if (err) { console.log(err, "Problem with adding new Department...") }
+        bootSequence()
+    })
+};
+
+const addRoles = [
+    {
+        message: "What is the name of the role?\n",
+        name: "arName"
+    },
+    {
+        message: "What is the salary of the role?\n",
+        name: "arSalary"
+    },
+    {
+        type: "list",
+        message: "Which department does the role belong to?\n",
+        choices: [departmentList],
+        name: "arBelong"
+    },
+
+]
+
+async function rolesLoop() {
+    db.query(`select department_name from departments`, (err, result) => {
+        if (err) { console.log(err, "Error retrieving data.") }
+
+        let departmentList;
+        for (i = 0; i > result.length; i++) {
+            console.log("Let me log those for you", result[i].department_name)
+            departmentList.push(result[i].department_name)
+        }
+        
+    })
+}
+
+function roleIntensification(data) {
+    console.log(data, "this is le role data")
+    await rolesLoop();
+    let perameters = [data.arName, data.arSalary, data.arBelong]
+    db.query(`insert into roles (title, salary, department_id) values (?)`, perameters, (err, result) => {
+        if (err) { console.log(err, "Error creating role.") }
+        console.log("Created role!")
+        bootSequence()
+    })
+
+
+}
+
+function fabricateEmployee(data) {
+    console.log(data, "this is the new human data")
+
+}
 
 
 
 
-
-
-
-bootSequence()
+bootSequence();
